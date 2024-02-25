@@ -1,0 +1,169 @@
+---
+title: "Homework 4"
+author: "Jon Campbell"
+format: pdf
+editor: visual
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+```
+
+## Question 1
+
+```{r}
+####### Strategy STAY
+S <- 10000
+stay_strat <- numeric(S)
+doors <- 1:3
+for (i in 1:S) {
+  prize <- sample(x = 1:3, size = 1
+                  , prob = c(1/3, 1/3, 1/3))
+  my_choice <- sample(x = 1:3, size = 1
+                  , prob = c(1/3, 1/3, 1/3))
+
+  if (my_choice == prize) {
+    stay_strat[i] <- 1
+  } else {
+    stay_strat[i] <- 0
+  }
+}
+stay_prob <- sum(stay_strat)/S
+
+#####Strategy SWITCH
+
+S <- 10000
+switch_strat <- numeric(S)
+doors <- 1:3
+for (i in 1:S) {
+  prize <- sample(x = 1:3, size = 1
+                  , prob = c(1/3, 1/3, 1/3))
+  my_choice <- sample(x = 1:3, size = 1
+                  , prob = c(1/3, 1/3, 1/3))
+    
+  rev <- subset(doors, doors != my_choice & doors != prize)
+    
+  if (length(rev)==2) {
+    revealed <- sample(rev, size = 1, prob = c(1/2,1/2))
+  } else {
+    revealed <- rev
+  }
+  
+  switch <- subset(doors, doors != my_choice & doors != revealed)
+
+  if (switch == prize) {
+    switch_strat[i] <- 1
+  } else {
+    switch_strat[i] <- 0
+  }
+}
+switch_prob <- sum(switch_strat)/S
+
+
+cat("Stay Strategy Success Prob: ",stay_prob,"\n",
+    "Switch Strategy Success Prob: ", switch_prob)
+```
+
+## Question 3
+
+```{r}
+
+
+```
+
+### b)
+
+```{r}
+loglikelihood <- function(a, b) {
+  logL <- 877*log(a/b)+47370*log(b)-(a/b)*sum(b^(0:99))
+  logL
+}
+
+a <- 7.06
+b <- 1.0042
+
+a_seq <- seq(a * 0.35, a * 1.6, length.out = 100)
+b_seq <- seq(b * 0.995, b * 1.007, length.out = 100)
+logL_matrix <- outer(a_seq, b_seq, Vectorize(loglikelihood))
+
+
+contour(a_seq, b_seq, logL_matrix, xlab = "Alpha", ylab = "Beta"
+        ,nlevels = 100)
+```
+
+```{r}
+a_seq <- seq(0.085, 80, length.out = 1000)
+b_seq <- seq(0.94, 1.07, length.out = 1000)
+logL_matrix <- outer(a_seq, b_seq, Vectorize(loglikelihood))
+
+
+threshold <- loglikelihood(7.06,1.0042)*0.15
+
+indices <- which(logL_matrix >= threshold, arr.ind = TRUE)
+
+a_range <- range(a_seq[indices[, 1]])
+b_range <- range(b_seq[indices[, 2]])
+cat("Alpha range: ",a_range,"\n","Beta range: ",b_range)
+```
+
+## c)
+
+```{r}
+data = read.csv("tropical-cyclones-1901-2000.csv")
+```
+
+```{r}
+ggplot(data, aes(x=count)) +
+  geom_histogram()
+
+ggplot(data, aes(x = year, y = count)) +
+  geom_point() +
+  geom_line()
+```
+
+```{r}
+a <- 7.06
+b <- 1.0042
+
+S <- 1000
+sim_data <- matrix(NA,nrow = S, ncol = 100)
+mses <- numeric(S)
+
+for (i in 1:S) {
+  for (j in 1:100) {
+    sim_data[i,j] <- rpois(1,a*b^(j-1))
+  }
+  mses[i] <- sum((data$count - sim_data[i,])^2)
+}
+
+```
+
+```{r}
+avg_sim_counts <- apply(sim_data, MARGIN = 2, FUN = mean)
+data |>
+  mutate(sim = avg_sim_counts) |>
+  ggplot() +
+  geom_histogram(aes(x = count),fill = "blue", alpha = 0.5) +
+  geom_histogram(aes(x = sim),fill = "red", alpha = 0.5)
+  
+
+```
+
+```{r}
+data |>
+  mutate(sim = sim_data[4,]) |>
+  ggplot(aes(x = year)) +
+  geom_point(aes(y = count),color = "blue", alpha = 0.5) +
+  geom_line(aes(y = count), color = "blue") +
+  geom_point(aes(y = sim),color = "red", alpha = 0.5) +
+  geom_line(aes(y = sim), color = "red")
+  #geom_line() +
+  #geom_point(aes(x = sim),fill = "red", alpha = 0.5)
+```
+
+```{r}
+mse <- sum((data$count - avg_sim_counts)^2)
+mse
+plot(y = data$count - avg_sim_counts, x = data$year)
+```
