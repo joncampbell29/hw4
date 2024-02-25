@@ -67,11 +67,6 @@ cat("Stay Strategy Success Prob: ",stay_prob,"\n",
 
 ## Question 3
 
-```{r}
-
-
-```
-
 ### b)
 
 ```{r}
@@ -114,15 +109,6 @@ data = read.csv("tropical-cyclones-1901-2000.csv")
 ```
 
 ```{r}
-ggplot(data, aes(x=count)) +
-  geom_histogram()
-
-ggplot(data, aes(x = year, y = count)) +
-  geom_point() +
-  geom_line()
-```
-
-```{r}
 a <- 7.06
 b <- 1.0042
 
@@ -137,33 +123,35 @@ for (i in 1:S) {
   mses[i] <- sum((data$count - sim_data[i,])^2)
 }
 
+cat("Average MSE: ", mean(mses), "\n",
+    "Simulated Sample Mean: ",mean(apply(sim_data, MARGIN = 1, FUN = mean)), "\n",
+    "Simulated Sample Variance: ", mean(apply(sim_data, MARGIN = 1, FUN = var)), "\n",
+    "Observed Sample Mean: ",mean(data$count), "\n",
+    "Observed Sample Variance: ",var(data$count), "\n")
+
 ```
 
 ```{r}
 avg_sim_counts <- apply(sim_data, MARGIN = 2, FUN = mean)
 data |>
-  mutate(sim = avg_sim_counts) |>
-  ggplot() +
-  geom_histogram(aes(x = count),fill = "blue", alpha = 0.5) +
-  geom_histogram(aes(x = sim),fill = "red", alpha = 0.5)
+  mutate(sim = sim_data[1,]) |>
+  pivot_longer(cols = c(count, sim), names_to = "type", values_to = "count") |>
+  ggplot(aes(x = count, fill = type)) +
+  geom_histogram(alpha = 0.3, bins = 20) +
+  geom_histogram(alpha = 0.3, bins = 20) +
+  scale_fill_manual(values = c("blue", "red"), name = "Data Type",
+                    labels = c("Actual Count", "Simulated Count"))
   
 
 ```
 
 ```{r}
 data |>
-  mutate(sim = sim_data[4,]) |>
-  ggplot(aes(x = year)) +
-  geom_point(aes(y = count),color = "blue", alpha = 0.5) +
-  geom_line(aes(y = count), color = "blue") +
-  geom_point(aes(y = sim),color = "red", alpha = 0.5) +
-  geom_line(aes(y = sim), color = "red")
-  #geom_line() +
-  #geom_point(aes(x = sim),fill = "red", alpha = 0.5)
-```
-
-```{r}
-mse <- sum((data$count - avg_sim_counts)^2)
-mse
-plot(y = data$count - avg_sim_counts, x = data$year)
+  mutate(sim = sim_data[1,]) |>
+  pivot_longer(cols = c(count, sim), names_to = "type", values_to = "count") |>
+  ggplot(aes(x = year, , y = count, color = type)) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = c("blue", "red"), name = "Data Type",
+                    labels = c("Actual Count", "Simulated Count"))
 ```
